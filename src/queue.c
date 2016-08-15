@@ -9,9 +9,10 @@
 
 struct T {
   int64_t count; /* 元素个数 */
+
   struct elem {
-    void *x;
     struct elem *next;
+    void *x;
   } *head, *tail;
 };
 

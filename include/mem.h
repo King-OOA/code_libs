@@ -15,7 +15,7 @@ extern void *mem_calloc(int64_t count, int64_t nbytes, const char *file, int32_t
 #define CALLOC(count, nbytes) mem_calloc((count), (nbytes), __FILE__, __LINE__)
 #define VNEW0(p, num, type) ((p) = CALLOC(1, (int64_t)(sizeof *(p) + (num) * sizeof(type))))
 
-
+/* 释放p所指向的内存,将p置为NULL */
 extern void mem_free(void *p,const char *file, int32_t line);
 #define FREE(p) ((void) mem_free((p), __FILE__, __LINE__), (p) = NULL) /* p会被多次求值 */
 
