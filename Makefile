@@ -1,52 +1,56 @@
 SUF = so
 CC = gcc
 
-LINKSO = gcc -O3 -shared -std=c99
+LINKSO = gcc -g -shared -std=c99
 LINKA = ar -rc
 LINK = $(LINKSO)
 
 INCLUDE = ./include
-CFLAGS = -O3 -Wall -c -std=c99 -fPIC -I$(INCLUDE)
+CFLAGS = -g -Wall -c -std=c99 -fPIC -I$(INCLUDE)
 
-LIBPATH = /usr/local/lib/ 	#生成的.so文件,直接放到系统库中
+#路径后面不能有任何空白字符.
+LIBPATH = /usr/local/lib/
 
-vpath %.h $(INCLUDE) ../Adaptive/include
+vpath %.h $(INCLUDE) #../Adaptive/include
 vpath %.c ./src
 
 #OBJS := $(patsubst %.c,%.o, $(wildcard ./sc/*.c))
 
 
-SOS = libcommon.so libbinary.so libadt.so libmem.so
-LIBS = $(SOS) #-ladt -lcommon -lm -lbinary 
+SOS = libcommon.so libbits.so libadt.so libpatset.so libmem.so #....
 
 a.out: 	main.o $(SOS)
-	$(CC) $(CFLAGS) -ladt -lcommon -lm -lbinary -lmem -o $@
+	$(CC) $< -lpatset -ladt  -lcommon -lm -lbits -lmem -o $@ #....
 	rm *.o
 
-main.o: main.c makedata.h binary.h adt.h
+main.o: main.c mem.h bits.h adt.h patset.h #....
 	$(CC) $(CFLAGS) $< -o $@
 
 
 #构建.o文件
-OBJS = common.o binary.o stack.o queue.o arith.o makedata.o mem.o
+OBJS = common.o bits.o list.o patset.o mem.o #....
 $(OBJS): common.h mem.h
 $(OBJS): %.o: %.c %.h
 	$(CC) $(CFLAGS) $< -o $@
 
-#通过.o文件,构建.so文件
+#通过.o文件,构建.so文件 #....
 libmem.$(SUF): mem.o
 	$(LINK) $^ -o $(LIBPATH)$@
 
 libcommon.$(SUF): common.o
 	$(LINK) $^ -o $(LIBPATH)$@
 
-libbinary.$(SUF): binary.o
+libbits.$(SUF): bits.o
 	$(LINK) $^ -o $(LIBPATH)$@
 
-ADT = stack.o queue.o
+libpatset.$(SUF): patset.o
+	$(LINK) $^ -o $(LIBPATH)$@
+
+ADT = list.o
 libadt.$(SUF): $(ADT)
 	$(LINK) $^ -o $(LIBPATH)$@
 
+#清理
 .PHONY: clean ro rso ra
 clean : ro rso ra
 	-rm a.out

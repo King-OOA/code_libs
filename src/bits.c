@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include "binary.h"
+#include "bits.h"
 #include "mem.h"
 
 #define SHIFT 3
