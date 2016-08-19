@@ -81,6 +81,54 @@ void list_push_back(T list, void *x)
      list->size++;
 }
 
+/* 将x按由小到大的顺序插入到list */
+void list_push_order(T list, void *x, int32_t compare(void const *x, void const *y))
+{
+  /* 创建新节点 */
+  struct node *node;
+  NEW(node);
+  node->x = x;
+  /* 找到合适的插入位置 */
+  struct node **pp;
+  for (pp = &list->first;
+       *pp && compare((*pp)->x, node->x) < 0;
+       pp = &(*pp)->next)
+    ;
+  /* 链表为空或者新节点将插入到链表尾*/
+  if (*pp == NULL)
+    list->last = node;
+  /* 插入新节点 */
+  node->next = *pp;
+  *pp = node;
+
+  list->size++;
+}
+
+/* 在list中搜索x,返回第一次出现的位置(节点);若不存在,返回NULL. x必须与链表元素类型相同 */
+void *list_search(T list, void *x, int32_t compare(void const *x, void const *y))
+{
+  /* 顺序遍历链表寻找目标 */
+  for (struct node *node = list->first; node; node = node->next)
+    if (compare(node->x, x) == 0)
+      return node->x;
+
+  return NULL;
+}
+
+/* 在有序list中搜索x,返回第一次出现的位置(节点);若不存在,返回NULL.x必须与链表元素类型相同 */
+void *list_search_order(T list, void *x, int32_t compare(void const *x, void const *y))
+{
+  /* 顺序遍历链表寻找目标 */
+  struct node *node;
+  int32_t result = 1; /* 初始时没找到 */
+  for (node = list->first;
+       node && (result = compare(node->x, x)) < 0;
+       node = node->next)
+    ;
+
+  return (result == 0 ? node->x : NULL);
+}
+
 /* 返回list首元素,并释放首节点 */
 void *list_pop_front(T list)
 {
