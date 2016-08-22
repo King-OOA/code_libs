@@ -7,12 +7,13 @@
 /* 分配nbytes字节的内存空间,不初始化 */
 extern void *mem_alloc(int64_t nbytes, const char *file, int32_t line);
 #define MALLOC(nbytes) mem_alloc((nbytes), __FILE__, __LINE__)
-#define NEW(p) ((p) = MALLOC((int64_t)sizeof *(p)))
+#define NEW(p) ((p) = MALLOC((int64_t) sizeof *(p)))
 #define VNEW(p, num, type) ((p) = ALLOC((int64_t) (sizeof *(p) + (num) * sizeof(type))))
 
 /* 分配count个元素的数组,每个元素大小为nbytes,数组初始化为0 */
 extern void *mem_calloc(int64_t count, int64_t nbytes, const char *file, int32_t line);
 #define CALLOC(count, nbytes) mem_calloc((count), (nbytes), __FILE__, __LINE__)
+#define NEW0(p) ((p) = CALLOC(1, (int64_t) sizeof *(p)))
 #define VNEW0(p, num, type) ((p) = CALLOC(1, (int64_t)(sizeof *(p) + (num) * sizeof(type))))
 
 /* 释放p所指向的内存,将p置为NULL */

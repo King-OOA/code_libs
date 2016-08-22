@@ -37,8 +37,8 @@ extern int64_t list_size(T list);
 
 /* 返回list的一个副本 */
 extern T list_dup(T list);
-/* 将list_2连接在list_1尾部,返回list_1,释放list_2 */
-extern T list_merge(T list_1, T *list_2p);
+/* 将list_2连接在list_1尾部,返回list_1,保留list_2 */
+extern T list_merge(T list_1, T list_2p);
 /* 逆转list中的元素 */
 extern void list_reverse(T list);
 /* 对list中的每一个元素,执行apply函数,arg作为外界参数,传入apply函数 */
