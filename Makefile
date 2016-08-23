@@ -1,12 +1,12 @@
 SUF = so
 CC = gcc
 
-LINKSO = gcc -g -shared -std=c99
+LINKSO = gcc -O3 -shared -std=c99
 LINKA = ar -rc
 LINK = $(LINKSO)
 
 INCLUDE = ./include
-CFLAGS = -g -Wall -c -std=c99 -fPIC -I$(INCLUDE)
+CFLAGS = -O3 -Wall -c -std=c99 -fPIC -I$(INCLUDE)
 
 #路径后面不能有任何空白字符.
 LIBPATH = /usr/local/lib/
