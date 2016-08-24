@@ -3,7 +3,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define CIRCULAR 1
+
 #define T List_T
+
 
 typedef struct T *T;
 

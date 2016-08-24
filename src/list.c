@@ -8,8 +8,9 @@
 
 #define T List_T 
 
+
 struct T {
-  int64_t size; /* 节点个数 */
+  uint64_t size; /* 节点个数 */
     
   struct node {
     struct node *next;	/* 下一个节点 */
