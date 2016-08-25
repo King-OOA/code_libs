@@ -111,7 +111,7 @@ int alphabet_compact(unsigned char *text, int text_len)
 
 char *str_cat(const char *str1, const char *str2)
 {
-    char *new_str = MALLOC(strlen(str1) + strlen(str2) + 1);
+    char *new_str = MALLOC(strlen(str1) + strlen(str2) + 1, char);
 
     return strcat(strcpy(new_str, str1), str2);
 }
@@ -133,7 +133,7 @@ char *load_file(const char *file_name, size_t *file_size_p)
   size_t file_size;
 
   file_size = get_file_size(fp);
-  buf = MALLOC(file_size + 1);
+  buf = MALLOC(file_size + 1, char);
 
   if (fread(buf, file_size, 1, fp) != 1) {
     if (feof(fp)) {

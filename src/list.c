@@ -236,7 +236,7 @@ void list_traverse(T list, void apply(void **xp, void *arg), void *arg)
 void **list_to_array(T list, void *end)
 {
   /* array中的元素为'void *'类型 */
-  void **array = MALLOC((list_size(list) + 1) * sizeof(*array)), **pp = array;
+  void **array = MALLOC(list_size(list) + 1, void *), **pp = array;
   /* 将链表中的元素,依次拷贝到array中 */
   for (struct node *node = list->first; node; node = node->next)
     *pp++ = node->x;
