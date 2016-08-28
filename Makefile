@@ -17,18 +17,18 @@ vpath %.c ./src
 #OBJS := $(patsubst %.c,%.o, $(wildcard ./sc/*.c))
 
 
-SOS = libcommon.so libbits.so libadt.so libpatset.so libmem.so #....
+SOS = libcommon.so libbits.so libadt.so libpatset.so libmakedata.so libmem.so #....
 
 a.out: 	main.o $(SOS)
-	$(CC) $< -lpatset -ladt  -lcommon -lm -lbits -lmem -o $@ #....
+	$(CC) $< -lpatset -ladt -lmakedata -lcommon -lm -lbits -lmem -o $@ #....
 	rm *.o
 
-main.o: main.c mem.h bits.h adt.h patset.h #....
+main.o: main.c mem.h bits.h adt.h patset.h makedata.h #....
 	$(CC) $(CFLAGS) $< -o $@
 
 
 #构建.o文件
-OBJS = common.o bits.o list.o patset.o mem.o #....
+OBJS = common.o bits.o list.o makedata.o patset.o mem.o #....
 $(OBJS): common.h mem.h
 $(OBJS): %.o: %.c %.h
 	$(CC) $(CFLAGS) $< -o $@
@@ -44,6 +44,10 @@ libbits.$(SUF): bits.o
 	$(LINK) $^ -o $(LIBPATH)$@
 
 libpatset.$(SUF): patset.o
+	$(LINK) $^ -o $(LIBPATH)$@
+
+
+libmakedata.$(SUF): makedata.o
 	$(LINK) $^ -o $(LIBPATH)$@
 
 ADT = list.o

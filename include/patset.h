@@ -3,7 +3,9 @@
 #include "adt.h"
 #include <stdint.h>
 
-#define MAX_PAT_LEN 100
+#define MIN_PAT_LEN 5
+#define MAX_PAT_LEN 30
+
 
 #define PRINT_PAT_NUM 1 /* 是否打印串长分布信息 */
 #define PRINT_PAT 0 /* 是否打印每个模式串 */

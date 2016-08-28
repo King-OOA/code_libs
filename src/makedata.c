@@ -1,60 +1,139 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <sys/stat.h>
+#include <sys/time.h>
 #include <string.h>
 #include <assert.h>
+
+#include "mem.h"
 #include "common.h"
 #include "makedata.h"
+#include "patset.h"
 
-static int Seed;
+/* ä»é•¿ä¸ºch_numçš„ch_arrayä¸­é€‰æ‹©å­—ç¬¦ï¼Œäº§ç”Ÿé•¿ä¸ºtext_lençš„æ–‡æœ¬ */
+void make_rand_text(const char *filename, int64_t text_len, Char_T *ch_array,  int32_t ch_num)
+{
+     assert(text_len > 0);
+     assert(ch_array);
+     assert(ch_num > 0);
+     
+     FILE *text_fp = efopen(filename, "w");
+
+     srand(time(NULL));
+     
+     while (text_len--)
+       putc(ch_array[rand_range(0, ch_num-1)], text_fp);
+	
+     efclose(text_fp);
+}
+
+  
 #define ACMa 16807
 #define ACMm 2147483647
 #define ACMq 127773         
 #define ACMr 2836
 #define hi (Seed / ACMq)
 #define lo (Seed % ACMq)
+static int fst = 1;
+static int Seed;
 
-/* ²úÉú³¤Îªtext_len,×ÖÄ¸±í·¶Î§ÔÚlow~highÖ®¼äµÄËæ»úÎÄ±¾ */
-void cre_rand_text(const char *filename, Pat_Num_t text_len, Char_t low,  Char_t high)
+static int aleat(int top)
 {
-     FILE *fp_text = Fopen(filename, "w");
+    long test;
+    struct timeval t;
      
-     srand(time(NULL));
+    if (fst) {
+        gettimeofday(&t, NULL);
+        Seed = t.tv_sec * t.tv_usec;
+        fst = 0;
+    }
      
-     while (text_len--)
-       putc(rand_range(low, high), fp_text);
-	
-     Fclose(fp_text);
+    Seed = ((test = ACMa * lo - ACMr * hi) > 0) ? test : test + ACMm;
+    return ((double) Seed) * top / ACMm;
 }
 
-void cre_rand_pats(const char *filename, Pat_Num_t pat_num, Pat_Len_t min_pat_len, Pat_Len_t max_pat_len, Char_t low, Char_t high)
+/* ä»æ–‡ä»¶fileä¸­, æŠ½å–pat_numä¸ªæ¨¡å¼ä¸², æ„æˆæ¨¡å¼ä¸²æ–‡ä»¶pat_file, ä¸²é•¿åˆ†å¸ƒ:min_pat_len~max_pat_len, ç¦æ­¢çš„å­—ç¬¦åœ¨ä¿å­˜åœ¨forbid_chä¸­ */
+void extract_pats(char const *text_file_name, char const *pats_file_name,
+		  Pat_Num_T pat_num, Pat_Len_T min_pat_len, Pat_Len_T max_pat_len,
+		  char const *forbid_ch)
 {
-    FILE *fp_text = Fopen(filename, "w");
-    Pat_Len_t pat_len;
-    Char_t ch;
+    size_t text_len;
+    char *text_buf= load_file(text_file_name, &text_len);
 
-    srand(time(NULL));
+    FILE *pats_fp = efopen(pats_file_name, "w");
 
     while (pat_num--) {
-        pat_len = rand_range(min_pat_len, max_pat_len);
-        while (pat_len--) {
-            do {
-                ch = rand_range(low, high);
-               } while (ch == '\0' || ch == '\n');
-               putc(ch, fp_text);
-          }
-          putc('\n', fp_text);
-     }
+        Pat_Len_T pat_len = rand_range(min_pat_len, max_pat_len); /* éšæœºäº§ç”Ÿæ¨¡å¼ä¸²é•¿ */
+	Pat_Len_T i;
+	size_t pat_pos; /* æ¯ä¸ªæ¨¡å¼ä¸²åœ¨æ–‡æœ¬ä¸­çš„èµ·å§‹ä½ç½® */
+        do { /*å¯¹æ¯ä¸€ä¸ªäº§ç”Ÿçš„èµ·å§‹ä½ç½®,æ£€æŸ¥è¯¥ä½ç½®çš„patæ˜¯å¦åŒ…å«ç¦æ­¢å­—ç¬¦,å¦‚æœåŒ…å«,åˆ™é‡æ–°äº§ç”Ÿä¸€ä¸ªèµ·å§‹ä½ç½®,ç›´åˆ°è¯¥ä½ç½®çš„patä¸åŒ…å«ä»»ä½•ç¦æ­¢å­—ç¬¦ */
+             pat_pos = aleat(text_len - pat_len + 1);
+            for (i = 0; i < pat_len; i++)
+                if (strchr(forbid_ch, text_buf[pat_pos+i])) break;
+        } while (i < pat_len);
+	
+        for (Pat_Len_T i = 0; i < pat_len; i++)
+            putc(text_buf[pat_pos+i], pats_fp);
+        
+        putc('\n', pats_fp);      /* æ¨¡å¼ä¸²ä»¥è¡Œä¸ºå•ä½ */
+    }
 
-     Fclose(fp_text);
+    efclose(pats_fp);
+	  
+    printf("File %s successfully generated\n", pats_file_name);
+
+    FREE(text_buf);
 }
 
-unsigned char buf[1024*1024]; /* 1MB buffer */
-  
-static int fst = 1;
+void file_filter(char const *file_name, int32_t (*filter)(int32_t ch))
+{
+  FILE *ifile_fp = efopen(file_name, "rb+");
+  char const *ofile_name = str_cat(file_name, "_filtered");
+  FILE *ofile_fp = efopen(ofile_name, "w");
+  FREE(ofile_name);
 
-/* ÓÃ1~alphabetÖĞµÄ×Ö·ûÌî³äbufµÄÇ°n¸ö×Ö·û*/
+  int32_t ch;
+  uint64_t n = 0; /* è¢«è¿‡æ»¤æ‰çš„å­—ç¬¦æ•° */
+  printf("\nFiltering: %s\n", file_name);
+
+ while ((ch = getc(ifile_fp)) != EOF)
+    if (filter(ch))
+      putc(ch, ofile_fp);
+    else
+      n++;
+  
+ printf("Dnoe! %ld characters filtered!\n", n);
+  efclose(ofile_fp);
+  efclose(ifile_fp);
+}
+
+void make_pats_file(void)
+{
+  char forbid_ch[] = {'\n', '\b', '\0'};
+
+  uint64_t pats_num[] = {100000, 200000, 300000, 400000,
+			 500000, 600000, 700000,
+			 800000, 900000, 1000000,
+			 2000000, 3000000, 4000000,
+			 5000000, 6000000, 7000000,
+			 8000000, 9000000, 10000000,
+			 20000000, 30000000};
+  
+  char *pats_file_suffix[] = {"10w", "20w", "30w", "40w", "50w", "60w",
+			   "70w", "80w", "90w", "100w", "200w", "300w",
+			   "400w", "500w", "600w", "700w", "800w", "900w",
+			   "1000w", "2000w", "3000w"};
+
+  int pats_file_num = 9;//sizeof(pats_num) / sizeof(*pats_num);
+
+  for (int i = 0; i < pats_file_num; i++) {
+    char pats_file_path[200] = "/home/pz/data/English/patterns/";
+    extract_pats("/home/pz/data/English/patterns/text_100M", strcat(pats_file_path, pats_file_suffix[i]),
+		 pats_num[i], MIN_PAT_LEN, MAX_PAT_LEN, forbid_ch);
+  }
+}
+
+/* ç”¨1~alphabetä¸­çš„å­—ç¬¦å¡«å……bufçš„å‰nä¸ªå­—ç¬¦*/
 /* static void fill_buffer(unsigned char *buf, int n, int alphabet) */
 /* { */
 /*     int i; */
@@ -73,7 +152,7 @@ static int fst = 1;
 /*     } */
 /* } */
 
-/* Éú³É file_name, ´óĞ¡Îª n MB, ×Ö·û¼¯Îªalphabet  */
+/* ç”Ÿæˆ file_name, å¤§å°ä¸º n MB, å­—ç¬¦é›†ä¸ºalphabet  */
 /* void fill_file(char const *file_name, int n, int alphabet) */
 /* { */
 /*     FILE *ofile; */
@@ -100,8 +179,8 @@ static int fst = 1;
 /*     } */
 
 /*     while (n--) { */
-/*         fill_buffer(buf, 1024*1024, alphabet); /\* ÏÈÌî³ä¿é¶ù *\/ */
-/*         if (fwrite (buf,1024*1024,1,ofile) != 1) { /\* ÔÙ½«¿é¶ùĞ´ÈëÎÄ¼ş *\/ */
+/*         fill_buffer(buf, 1024*1024, alphabet); /\* å…ˆå¡«å……å—å„¿ *\/ */
+/*         if (fwrite (buf,1024*1024,1,ofile) != 1) { /\* å†å°†å—å„¿å†™å…¥æ–‡ä»¶ *\/ */
 /*             fprintf (stderr,"Error: cannot write %s\n",file_name); */
 /*             fprintf(stderr, "%s\n", strerror(errno)); */
 /*             fclose(ofile); */
@@ -114,249 +193,53 @@ static int fst = 1;
 
 /*     fprintf (stderr,"File %s successfully generated\n",file_name); */
 /* } */
+//å°†å­—ç¬¦ä¸²forbidä¸­çš„å­—ç¬¦åºåˆ—,è½¬åŒ–ä¸ºçœŸæ­£çš„è½¬ä¹‰å­—ç¬¦åºåˆ—å­˜å…¥*forbideä¸­
+/* static void parse_forbid(char const *forbid, char ** forbide) */
+/* { */
+/*      int len, i, j; */
 
-int aleat(int top)
-{
-    long test;
-    struct timeval t;
+/*      len = strlen(forbid); */
+
+/*      *forbide = MALLOC(len + 1, char); */
      
-    if (fst) {
-        gettimeofday(&t, NULL);
-        Seed = t.tv_sec * t.tv_usec;
-        fst = 0;
-    }
-     
-    Seed = ((test = ACMa * lo - ACMr * hi) > 0) ? test : test + ACMm;
-    return ((double) Seed) * top / ACMm;
-}
+/*      for(i = 0, j = 0; i < len; i++) { /\* éå†forbidå­—ç¬¦ä¸² *\/ */
+/*          if (forbid[i] != '\\') { */
+/* 	       if(forbid[i] != '\n') */
+/* 		    (*forbide)[j++] = forbid[i]; */
+/* 	  } else { */
+/* 	       i++; */
+/* 	       if(i == len) { */
+/* 		    /\* forbid[i-1] = '\0'; *\/ */
+/* 		    (*forbide)[j] = '\0'; */
+/* 		    fprintf (stderr, "Not correct forbidden string: only one \\\n"); */
+/* 		    return; */
+/* 	       } */
+/* 	       switch (forbid[i]) { */
+/* 		   case'n':  (*forbide)[j++] = '\n'; break; */
+/* 		   case'\\': (*forbide)[j++] = '\\'; break; */
+/* 		   case'b':  (*forbide)[j++] = '\b'; break; */
+/* 		   case'e':  (*forbide)[j++] = '\e'; break; */
+/* 		   case'f':  (*forbide)[j++] = '\f'; break; */
+/* 		   case'r':  (*forbide)[j++] = '\r'; break; */
+/* 		   case't':  (*forbide)[j++] = '\t'; break; */
+/* 		   case'v':  (*forbide)[j++] = '\v'; break; */
+/* 		   case'a':  (*forbide)[j++] = '\a'; break; */
+/* 		   case'c':     /\* \cå­—ç¬¦ç¼–ç (0~255) *\/ */
+/* 			if(i + 3 >= len) { */
+/* 			     /\* forbid[i-1] = '\0'; *\/ */
+/* 			     (*forbide)[j] = '\0'; */
+/* 			     fprintf (stderr, "Not correct forbidden string: 3 digits after \\c\n"); */
+/* 			     return; */
+/* 			} */
+/* 			(*forbide)[j++] = (forbid[i+1]-48)*100 + (forbid[i+2]-48)*10 + (forbid[i+3]-48); */
+/* 			i += 3; */
+/* 			break; */
+/* 		   default: */
+/* 			fprintf (stdout, "Unknown escape sequence '\\%c'in forbidden string\n", forbid[i]); */
+/* 			break; */
+/* 	       } */
+/* 	  } */
+/*      } */
+/*      (*forbide)[j] = '\0'; */
+/* } */
 
-/* ½«×Ö·û´®forbidÖĞµÄ×Ö·ûĞòÁĞ,×ª»¯ÎªÕæÕıµÄ×ªÒå×Ö·ûĞòÁĞ´æÈë*forbideÖĞ */
-static void parse_forbid(char const *forbid, char ** forbide)
-{
-     int len, i, j;
-
-     len = strlen(forbid);
-
-     *forbide = MALLOC(len + 1, char);
-     
-     for(i = 0, j = 0; i < len; i++) { /* ±éÀúforbid×Ö·û´® */
-         if (forbid[i] != '\\') {
-	       if(forbid[i] != '\n')
-		    (*forbide)[j++] = forbid[i];
-	  } else { 
-	       i++;
-	       if(i == len) {
-		    /* forbid[i-1] = '\0'; */
-		    (*forbide)[j] = '\0';
-		    fprintf (stderr, "Not correct forbidden string: only one \\\n");
-		    return;
-	       }
-	       switch (forbid[i]) {
-		   case'n':  (*forbide)[j++] = '\n'; break;
-		   case'\\': (*forbide)[j++] = '\\'; break;
-		   case'b':  (*forbide)[j++] = '\b'; break;				
-		   case'e':  (*forbide)[j++] = '\e'; break;
-		   case'f':  (*forbide)[j++] = '\f'; break;
-		   case'r':  (*forbide)[j++] = '\r'; break;
-		   case't':  (*forbide)[j++] = '\t'; break;
-		   case'v':  (*forbide)[j++] = '\v'; break;
-		   case'a':  (*forbide)[j++] = '\a'; break;
-		   case'c':     /* \c×Ö·û±àÂë(0~255) */
-			if(i + 3 >= len) {
-			     /* forbid[i-1] = '\0'; */
-			     (*forbide)[j] = '\0';
-			     fprintf (stderr, "Not correct forbidden string: 3 digits after \\c\n");
-			     return;
-			}
-			(*forbide)[j++] = (forbid[i+1]-48)*100 + (forbid[i+2]-48)*10 + (forbid[i+3]-48); 
-			i += 3;
-			break;					
-		   default:
-			fprintf (stdout, "Unknown escape sequence '\\%c'in forbidden string\n", forbid[i]);
-			break;
-	       }
-	  }
-     }
-     (*forbide)[j] = '\0';
-}
-
-/* ´ÓÎÄ¼şfileÖĞ, ³éÈ¡pat_num¸öÄ£Ê½´®, ¹¹³ÉÄ£Ê½´®ÎÄ¼şpat_file, ´®³¤·Ö²¼:min_pat_len~max_pat_len, ½ûÖ¹µÄ×Ö·ûÔÚ±£´æÔÚforbidÖĞ */
-void extract_pats(char const *text_filename, Pat_Num_t pat_num, Pat_Len_t min_pat_len, Pat_Len_t max_pat_len, char const *pat_filename, char const *forbid)
-{
-    Pat_Num_t pat_len;
-    File_len_t file_len, starting_pos;
-    FILE *ifile, *ofile;
-    unsigned char *buff;
-    char *forbide = NULL;
-    Pat_Len_t i;
-
-    parse_forbid(forbid, &forbide);
-
-    ifile = Fopen (text_filename, "rb");
-    file_len = get_file_size(ifile);
-    buff = MALLOC(file_len, unsigned char);
-    
-    if (fread (buff, file_len, 1, ifile) != 1)  { /* read the whole file into buf */
-        fprintf(stderr, "Can not fread file: %s\n", text_filename);
-        exit(EXIT_FAILURE);
-    }
-    
-    Fclose(ifile);
-
-    ofile = Fopen(pat_filename, "w");
-
-    while (pat_num--) {
-        pat_len = rand_range(min_pat_len, max_pat_len);
-        do { /*¶ÔÃ¿Ò»¸ö²úÉúµÄÆğÊ¼Î»ÖÃ,¼ì²é¸ÃÎ»ÖÃµÄpatÊÇ·ñ°üº¬½ûÖ¹×Ö·û,Èç¹û°üº¬,ÔòÖØĞÂ²úÉúÒ»¸öÆğÊ¼Î»ÖÃ,Ö±µ½¸ÃÎ»ÖÃµÄpat²»°üº¬ÈÎºÎ½ûÖ¹×Ö·û */
-            starting_pos = aleat(file_len - pat_len + 1);
-            for (i = 0; i < pat_len; i++)
-                if (strchr(forbide, buff[starting_pos+i])) break;
-        } while (i < pat_len);
-	
-        for (i = 0; i < pat_len; i++)
-            putc(buff[starting_pos+i], ofile);
-        
-        putc('\n', ofile);      /* Ä£Ê½´®ÒÔĞĞÎªµ¥Î» */
-    }
-
-    Fclose(ofile);
-	  
-    printf("File %s successfully generated\n", pat_filename);
-
-    free(buff); free(forbide);
-}
-
-//static double cal_sd(Pat_Set_t *pat_set);
-static void ins_pat(Pat_Node_t *, Pat_Set_t *);
-static void read_pats(FILE *, Pat_Set_t *);
-
-/* ¹¹½¨¼¯Êı¾İ½á¹¹ */
-Pat_Set_t *cre_pat_set(const char *pats_file_name)
-{
-    FILE *fp_pats; /*Ä£Ê½´®ÎÄ¼ş*/
-    Pat_Set_t *pat_set;
-     
-    fp_pats = Fopen(pats_file_name, "rb");
-    
-    pat_set = MALLOC(1, Pat_Set_t);
-    pat_set->pats_file_name = strdup(pats_file_name);
-    pat_set->pat_list = NULL;
-    pat_set->total_pats = 0;
-    pat_set->min_pat_len = MAX_PAT_LEN;
-    pat_set->max_pat_len = 0;
-    pat_set->mean_pat_len = 0;
-    pat_set->total_pat_len = 0;
-    memset(pat_set->pat_len_distri, 0, sizeof(int) * MAX_PAT_LEN);
-
-    read_pats(fp_pats, pat_set);
-
-    Fclose(fp_pats);
-
-    return pat_set;
-}
-
-static double cal_sd(Pat_Set_t *); /*¼ÆËã±ê×¼²î*/
-
-/* °´ĞĞ¶ÁÈ¡Ä£Ê½´® */
-static void read_pats(FILE *fp_pats, Pat_Set_t *pat_set)
-{
-    char buf[MAX_PAT_LEN+1]; /*Ä£Ê½´®»º´æ£¬×î´ó1000¸ö×Ö·û£¬°üÀ¨»»ĞĞ·û*/
-    Pat_Len_t pat_len;
-    Pat_Num_t pats_readed = 0; /*ÒÑ¾­¶ÁÈëµÄÄ£Ê½ÊıÁ¿*/
-    char *line_break; /*»»ĞĞ·ûÖ¸Õë*/
-
-    while (fgets(buf, sizeof(buf), fp_pats)) {
-        if (line_break = strchr(buf, '\n'))
-            *line_break = '\0';
-        if (pat_len = strlen(buf)) {
-            ins_pat(cre_pat_node(buf), pat_set); /*¹¹½¨Ä£Ê½½Úµã£¬²¢²åÈëµ½Ä£Ê½¼¯ÖĞ*/
-            pats_readed++;
-            pat_set->total_pats++;
-            pat_set->total_pat_len += pat_len;
-            pat_set->pat_len_distri[pat_len-1]++;
-        }
-    }
-
-    pat_set->mean_pat_len = (double) pat_set->total_pat_len / pat_set->total_pats; /*¼ÆËãÄ£Ê½´®Æ½¾ù³¤¶È*/
-    pat_set->pat_len_sd = cal_sd(pat_set);
-}
-
-Pat_Node_t *cre_pat_node(const char *pat_str)
-{
-    Pat_Node_t *new_pat_node =  MALLOC(1, Pat_Node_t);
-    new_pat_node->pat_str = strdup(pat_str);
-    new_pat_node->next = NULL;
-
-    return new_pat_node;
-}
-
-/* ½«Ä£Ê½½Úµã²åÈëµ½Ä£Ê½¼¯ÖĞ */
-static void ins_pat(Pat_Node_t *pat_node, Pat_Set_t *pat_set)
-{
-    static Pat_Node_t *tail = NULL; /*¾²Ì¬±äÁ¿±£´æÄ£Ê½Á´±íÎ²Ö¸Õë*/
-    Pat_Len_t len;
-
-    if (pat_set->total_pats == 0) { /*Ä£Ê½¼¯Îª¿Õ*/
-        pat_set->pat_list = pat_node;/*²åÈëµ½Í·*/
-        tail = pat_node; 
-    } else { /*²åÈëÄ£Ê½´®¼¯ºÏÎ²²¿*/
-        tail->next = pat_node;
-        tail = pat_node;
-    }
-
-    if ((len = strlen(pat_node->pat_str)) < pat_set->min_pat_len)
-        pat_set->min_pat_len = len;
-    if (len > pat_set->max_pat_len)
-        pat_set->max_pat_len = len;
-}
-
-/*Ïú»ÙÄ£Ê½¼¯ºÏ*/
-void des_pat_set(Pat_Set_t *pat_set)
-{
-    Pat_Node_t *p, *next;
-
-    /*ÒÀ´ÎÏú»Ù´®Á´±íµÄÃ¿¸ö½Úµã*/
-    for (p = pat_set->pat_list; p; p = next) { 
-        next = p->next;
-        free(p->pat_str); /*Ïú»ÙÄ£Ê½×Ö·û´®*/
-        free(p); /*Ïú»ÙÄ£Ê½½Úµã*/
-    }
-
-    free(pat_set->pats_file_name);
-    free(pat_set); /*Ïú»ÙÄ£Ê½¼¯±¾Éí*/
-}
-
-static double cal_sd(Pat_Set_t *pat_set) /*¼ÆËã±ê×¼²î*/
-{
-     double sd = 0;
-     Pat_Node_t *p;
-
-     for (p = pat_set->pat_list; p; p = p->next)
-         sd += pow(strlen(p->pat_str) - pat_set->mean_pat_len, 2);
-
-     return sqrt(sd / pat_set->total_pats);
-}
-
-/*print the pat set info*/
-#ifdef DEBUG
-
-void print_pat_set(const Pat_Set_t *pat_set, int max) 
-{
-    Pat_Node_t *p;
-    int num;
-    int i;
-
-    printf("pats file: %s\n total pats: %ld\n max len: %d min len: %d mean len: %.2f sd: %.2f total len: %ld \n",
-            pat_set->pats_file_name, 
-            pat_set->total_pats,
-            pat_set->max_pat_len, pat_set->min_pat_len, pat_set->mean_pat_len, pat_set->pat_len_sd, pat_set->total_pat_len
-            );
-
-    for (i = pat_set->min_pat_len; i <= pat_set->max_pat_len; i++)
-        printf("len: %2d  num: %5d  proportion: %%%7f\n", i, pat_set->pat_len_distri[i], ((double) pat_set->pat_len_distri[i] / pat_set->total_pats) * 100);
-    
-    for (num = 1, p = pat_set->pat_list; p && num <= max; p = p->next, num++)
-        printf("%4d: %s\n", num, p->pat_str);
-}
-
-#endif
