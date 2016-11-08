@@ -116,6 +116,14 @@ char *str_cat(const char *str1, const char *str2)
     return strcat(strcpy(new_str, str1), str2);
 }
 
+char *str_dup(char const *str)
+{
+  char *dup = MALLOC(strlen(str) + 1, char);
+  strcpy(dup, str);
+  
+  return dup;
+}
+
 /* srand()在调用函数中使用,而非在rand_range中使用 */
 int rand_range(int low, int high)
 {

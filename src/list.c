@@ -133,8 +133,6 @@ void *list_search_order(T list, void *x, int32_t compare(void const *x, void con
 /* 返回list首元素,并释放首节点 */
 void *list_pop_front(T list)
 {
-  assert(!list_empty(list));
-
   struct node *next = list->first->next;
   void *x = list->first->x;
   FREE(list->first);
@@ -150,8 +148,6 @@ void *list_pop_front(T list)
 /* 返回list尾元素,并释放尾节点 */
 void *list_pop_back(T list)
 {
-  assert(!list_empty(list));
-
   /* 找到倒数第二个节点 */
   struct node *prev = NULL;
   for (struct node *node = list->first;

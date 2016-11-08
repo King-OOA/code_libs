@@ -39,7 +39,7 @@ static double cal_sd(T patset) /*计算标准差*/
 T patset_new(const char *pats_file_name)
 {
     FILE *pats_fp; /*模式串文件*/
-    pats_fp = efopen(pats_file_name, "r");
+    pats_fp = efopen(pats_file_name, "rb");
 
     T patset;
 
@@ -52,12 +52,15 @@ T patset_new(const char *pats_file_name)
     patset->mean_patlen = 0;
     patset->total_patlen = 0;
     memset(patset->patlen_num, 0, sizeof(patset->patlen_num));
+    
+    uint64_t line_num = 0;
 
-    char pat[MAX_PAT_LEN+1]; /*模式串缓存，最大1000个字符，包括换行符*/
+    char pat[MAX_PAT_LEN+1]; /*模式串缓存，包括换行符*/
     while (fgets(pat, sizeof(pat), pats_fp)) {
-	char *line_break = strchr(pat, '\n'); /*换行符指针*/
+      line_num++;
+      char *line_break = strchr(pat, '\n'); /*换行符指针*/
         if (line_break) *line_break = '\0';
-
+	
 	Pat_Len_T patlen = strlen(pat);
         if (patlen) { /*非空行*/
 	    list_push_back(patset->pat_list, strdup(pat));
@@ -69,9 +72,10 @@ T patset_new(const char *pats_file_name)
 
             patset->total_patlen += patlen;
             patset->patlen_num[patlen]++;
-        }
+        } 
     }
-
+    
+    //printf("Total line: %ld\n", line_num);
     patset->pat_num = list_size(patset->pat_list);
      /*计算模式串平均长度*/
     patset->mean_patlen = (double) patset->total_patlen / patset->pat_num;
@@ -79,7 +83,7 @@ T patset_new(const char *pats_file_name)
     patset->patlen_sd = cal_sd(patset);
     
     efclose(pats_fp);
-
+    
     return patset;
 }
 
@@ -101,31 +105,31 @@ void print_patset(const T patset)
 {
     /* 打印模式集基本信息 */
     printf("file: %s\n"
-	   "pat num: %ld\n"
-	   "min len: %d\n"
-	   "max len: %d\n"
-	   "total len: %ld\n"
-	   "mean len: %.2f\n"
-	   "len sd: %.2f\n",
-	   patset->pats_file_name,
-	   patset->pat_num,
-	   patset->min_patlen,
-	   patset->max_patlen,
-	   patset->total_patlen,
-	   patset->mean_patlen,
-	   patset->patlen_sd);
+    	   "pat num: %ld\n"
+    	   "min len: %d\n"
+    	   "max len: %d\n"
+    	   "total len: %ld\n"
+    	   "mean len: %.2f\n"
+    	   "len sd: %.2f\n",
+    	   patset->pats_file_name,
+    	   patset->pat_num,
+    	   patset->min_patlen,
+    	   patset->max_patlen,
+    	   patset->total_patlen,
+    	   patset->mean_patlen,
+    	   patset->patlen_sd);
     
     /* 打印串长分布 */
     if (PRINT_PAT_NUM) {
-	printf("\nPattern length number:\n");
-	for (Pat_Len_T patlen = 1; patlen <= patset->max_patlen; patlen++) {
-	    Pat_Num_T num = patset->patlen_num[patlen];
-	    if (num) printf("len|num:  %2d | %5ld %7.2f%%\n",
-		       patlen, num, ((double) num / patset->pat_num) * 100);
-	}
+    	printf("\nPattern length number:\n");
+    	for (Pat_Len_T patlen = 1; patlen <= patset->max_patlen; patlen++) {
+    	    Pat_Num_T num = patset->patlen_num[patlen];
+    	    if (num) printf("len|num:  %2d | %5ld %7.2f%%\n",
+    		       patlen, num, ((double) num / patset->pat_num) * 100);
+    	}
     }
     
     /* 打印每个模式串 */
     if (PRINT_PAT)
-	list_traverse(patset->pat_list, print_pat, NULL);
+      list_traverse(patset->pat_list, print_pat, NULL);
 }

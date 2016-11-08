@@ -4,11 +4,26 @@
 #include <sys/time.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "mem.h"
 #include "common.h"
 #include "makedata.h"
 #include "patset.h"
+
+static char printed_ch[] = {'a','b','c','d','e','f','g','h','i',
+		     'j','k','l','m','n','o','p','q','r',
+		     's','t','u','v','w','x','y','z',
+		     'A', 'B','C','D','E','F','G','H','I','J',
+		     'K','L','M','N','O','P','Q','R','S',
+		     'T','U','V','W','X','Y','Z',
+		     '0','1','2','3','4','5','6','7','8','9',
+		     '~', '`','!','@','#','$','%','^','&','*','(',')',
+		     '-','_','=','+','{','}','[',']','\\','|',
+		     ';',':','\'','"',',','.','<','>','/','?',' ',
+		     '\n','\t'};
+
+static char DNA_ch[] = {'A','C','T','G'};
 
 /* 从长为ch_num的ch_array中选择字符，产生长为text_len的文本 */
 void make_rand_text(const char *filename, int64_t text_len, Char_T *ch_array,  int32_t ch_num)
@@ -52,7 +67,8 @@ static int aleat(int top)
     return ((double) Seed) * top / ACMm;
 }
 
-/* 从文件file中, 抽取pat_num个模式串, 构成模式串文件pat_file, 串长分布:min_pat_len~max_pat_len, 禁止的字符在保存在forbid_ch中 */
+/* 从文件file中, 抽取pat_num个模式串, 构成模式串文件pat_file,
+   串长分布:min_pat_len~max_pat_len, 禁止的字符在保存在forbid_ch中 */
 void extract_pats(char const *text_file_name, char const *pats_file_name,
 		  Pat_Num_T pat_num, Pat_Len_T min_pat_len, Pat_Len_T max_pat_len,
 		  char const *forbid_ch)
@@ -66,7 +82,9 @@ void extract_pats(char const *text_file_name, char const *pats_file_name,
         Pat_Len_T pat_len = rand_range(min_pat_len, max_pat_len); /* 随机产生模式串长 */
 	Pat_Len_T i;
 	size_t pat_pos; /* 每个模式串在文本中的起始位置 */
-        do { /*对每一个产生的起始位置,检查该位置的pat是否包含禁止字符,如果包含,则重新产生一个起始位置,直到该位置的pat不包含任何禁止字符 */
+        /*对每一个产生的起始位置,检查该位置的pat是否包含禁止字符,如果包含,
+	  则重新产生一个起始位置,直到该位置的pat不包含任何禁止字符 */
+	do { 
              pat_pos = aleat(text_len - pat_len + 1);
             for (i = 0; i < pat_len; i++)
                 if (strchr(forbid_ch, text_buf[pat_pos+i])) break;
@@ -124,13 +142,29 @@ void make_pats_file(void)
 			   "400w", "500w", "600w", "700w", "800w", "900w",
 			   "1000w", "2000w", "3000w"};
 
-  int pats_file_num = 9;//sizeof(pats_num) / sizeof(*pats_num);
+  int pats_file_num = sizeof(pats_num) / sizeof(*pats_num);
 
   for (int i = 0; i < pats_file_num; i++) {
-    char pats_file_path[200] = "/home/pz/data/English/patterns/";
-    extract_pats("/home/pz/data/English/patterns/text_100M", strcat(pats_file_path, pats_file_suffix[i]),
+    char pats_file_path[200] = "/home/pz/data/";
+    extract_pats("/home/pz/data/Random/patterns/Random_100M",
+		 strcat(pats_file_path, pats_file_suffix[i]),
 		 pats_num[i], MIN_PAT_LEN, MAX_PAT_LEN, forbid_ch);
   }
+}
+
+/* 产生num个长为len的DNA序列, 保存在文件file_name中 */
+void make_DNA(int32_t len, int32_t num, char const *file_name)
+{
+    FILE *fp = efopen(file_name, "w");
+    char DNA[] = {'A', 'C', 'T', 'G'};
+    
+    while (num--) {
+	for (int i = 0; i < len; i++)
+	    putc(DNA[rand_range(0, 3)], fp);
+	putc('\n', fp);
+    }
+
+    efclose(fp);
 }
 
 /* 用1~alphabet中的字符填充buf的前n个字符*/
@@ -242,4 +276,6 @@ void make_pats_file(void)
 /*      } */
 /*      (*forbide)[j] = '\0'; */
 /* } */
+
+
 

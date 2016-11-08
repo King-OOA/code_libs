@@ -3,8 +3,8 @@
 #include "adt.h"
 #include <stdint.h>
 
-#define MIN_PAT_LEN 5
-#define MAX_PAT_LEN 30
+#define MIN_PAT_LEN 1
+#define MAX_PAT_LEN 2000
 
 
 #define PRINT_PAT_NUM 1 /* 是否打印串长分布信息 */
