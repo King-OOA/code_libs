@@ -10,23 +10,23 @@ vpath %.c ./src
 
 #OBJS := $(patsubst %.c,%.o, $(wildcard ./sc/*.c))
 
-SOs = libcommon.so libbits.so libadt.so libpatset.so libmakedata.so libmem.so #....
-As = libcommon.a libbits.a libadt.a libpatset.a libmakedata.a libmem.a #....
+SOs = libcommon.so libbits.so libadt.so libfileio.so libpatset.so libmakedata.so libmem.so  #....
+As = libcommon.a libbits.a libadt.a libpatset.a libmakedata.a libmem.a libfileio.a #....
 LIBS = $(SOs) $(As)
 
 # 构建目标文件
 a.out: 	main.o $(SOs) $(As)
-	$(CC) $< -L$(LIBPATH_A) -static -lpatset -ladt -lmakedata -lcommon -lm -lbits -lmem -o $@ #....
+	$(CC) $< -L$(LIBPATH_A) -static -lpatset -ladt -lmakedata -lcommon  -lfileio -lm -lbits -lmem -o $@ #....
 	rm *.o
 
 
 #构建.o文件
 CFLAGS = -g -Wall -fPIC -c -std=c99 -I$(INCLUDE)
 
-main.o: main.c mem.h bits.h adt.h patset.h makedata.h #....
+main.o: main.c mem.h bits.h adt.h patset.h makedata.h fileio.h #....
 	$(CC) $(CFLAGS) $< -o $@
 
-OBJS = common.o bits.o list.o makedata.o patset.o mem.o #....
+OBJS = common.o bits.o list.o makedata.o patset.o mem.o  fileio.o #....
 $(OBJS): common.h mem.h
 $(OBJS): %.o: %.c %.h
 	$(CC) $(CFLAGS) $< -o $@
@@ -64,6 +64,11 @@ libpatset.a: patset.o
 libmakedata.so: makedata.o
 	$(LINK_SO) $^ -o $(LIBPATH_SO)$@
 libmakedata.a: makedata.o
+	$(LINK_A) $(LIBPATH_A)$@ $^
+
+libfileio.so: fileio.o
+	$(LINK_SO) $^ -o $(LIBPATH_SO)$@
+libfileio.a: fileio.o
 	$(LINK_A) $(LIBPATH_A)$@ $^
 
 

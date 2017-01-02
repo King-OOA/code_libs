@@ -16,4 +16,4 @@ void extract_pats(char const *text_file_name, char const *pats_file_name,
 		  char const *forbid_ch);
 void file_filter(char const *file_name, int32_t (*filter)(int32_t ch));
 void make_pats_file(void);
-void make_DNA(int32_t len, int32_t num, char const *file_name);
+void make_DNA(int32_t num, int32_t len, char const *file_name);

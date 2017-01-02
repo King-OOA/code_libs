@@ -153,7 +153,7 @@ void make_pats_file(void)
 }
 
 /* 产生num个长为len的DNA序列, 保存在文件file_name中 */
-void make_DNA(int32_t len, int32_t num, char const *file_name)
+void make_DNA(int32_t num, int32_t len, char const *file_name)
 {
     FILE *fp = efopen(file_name, "w");
     char DNA[] = {'A', 'C', 'T', 'G'};
