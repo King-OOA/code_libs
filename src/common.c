@@ -8,6 +8,9 @@
 #include <assert.h>
 #include "common.h"
 #include "mem.h"
+#include <ctype.h>
+#include <stdint.h>
+
 //#include "share.h"
 
 unsigned char buf[1024*1024]; /* 1MB buffer */
@@ -80,7 +83,7 @@ int get_file_alphabet(char const *filename)
     for (i = 0; i < 256; i++) 
         if (sigma[i]) {
             n++;
-            printf (" %c: %lu", i, sigma[i]);
+            printf (" %c: %lu\n", i, sigma[i]);
         }
     
     printf ("\n\nFile %s has %i different characters\n", filename, n); 

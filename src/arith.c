@@ -1,17 +1,17 @@
 #include "arith.h"
 
 
-int Arith_max(int x, int y)
+int arith_max(int x, int y)
 {
      return x > y ? x : y;
 }
 
-int Arith_min(int x, int y)
+int arith_min(int x, int y)
 {
      return x > y ? y : x;
 }
 
-int Arith_div(int x, int y)
+int arith_div(int x, int y)
 {
      if ((x < 0) != (y < 0) && (-13 / 5 == -2) && (x % y != 0))
 	  return x/y -1;
@@ -19,7 +19,7 @@ int Arith_div(int x, int y)
 	  return x/y;
 }
 
-int Arith_mod(int x, int y)
+int arith_mod(int x, int y)
 {
      if ((x < 0) != (y < 0) && (-13 / 5 == -2) && (x % y != 0))
 	  return x % y + y;
@@ -27,12 +27,12 @@ int Arith_mod(int x, int y)
 	  return x % y;
 }
 
-int Arith_floor(int x, int y)
+int arith_floor(int x, int y)
 {
-     return Arith_div(x, y);
+     return arith_div(x, y);
 }
 
-int Arith_ceiling(int x, int y)
+int arith_ceiling(int x, int y)
 {
-     return Arith_div(x, y) + (x % y != 0);
+     return arith_div(x, y) + (x % y != 0);
 }

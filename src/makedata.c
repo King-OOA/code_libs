@@ -9,7 +9,7 @@
 #include "mem.h"
 #include "common.h"
 #include "makedata.h"
-#include "patset.h"
+#include "strlist.h"
 
 static char printed_ch[] = {'a','b','c','d','e','f','g','h','i',
 		     'j','k','l','m','n','o','p','q','r',
@@ -33,7 +33,7 @@ void make_rand_text(const char *filename, int64_t text_len, Char_T *ch_array,  i
      assert(ch_num > 0);
      
      FILE *text_fp = efopen(filename, "w");
-
+	     
      srand(time(NULL));
      
      while (text_len--)
@@ -42,7 +42,6 @@ void make_rand_text(const char *filename, int64_t text_len, Char_T *ch_array,  i
      efclose(text_fp);
 }
 
-  
 #define ACMa 16807
 #define ACMm 2147483647
 #define ACMq 127773         
@@ -56,7 +55,7 @@ static int aleat(int top)
 {
     long test;
     struct timeval t;
-     
+    
     if (fst) {
         gettimeofday(&t, NULL);
         Seed = t.tv_sec * t.tv_usec;
@@ -114,11 +113,13 @@ void file_filter(char const *file_name, int32_t (*filter)(int32_t ch))
   uint64_t n = 0; /* 被过滤掉的字符数 */
   printf("\nFiltering: %s\n", file_name);
 
- while ((ch = getc(ifile_fp)) != EOF)
-    if (filter(ch))
+  while ((ch = getc(ifile_fp)) != EOF)
+    if(filter(ch))
       putc(ch, ofile_fp);
     else
       n++;
+
+  
   
  printf("Dnoe! %ld characters filtered!\n", n);
   efclose(ofile_fp);

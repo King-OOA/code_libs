@@ -29,4 +29,4 @@ extern void mem_free(void *p,const char *file, int32_t line);
 #define FREE(p) ((void) mem_free((p), __FILE__, __LINE__), (p) = NULL) /* p会被多次求值 */
 
 extern void *mem_resize(void *p, int64_t nbytes, const char *file, int32_t line);
-#define RESIZE(p, nbytes) ((p) = mem_resize((p), __FILE__, __LINE__)) /* p会被多次求值 */
+#define RESIZE(p, nbytes) ((p) = mem_resize((p), nbytes,  __FILE__, __LINE__)) /* p会被多次求值 */

@@ -12,7 +12,7 @@ void *mem_alloc(int64_t nbytes, char const *file, int32_t line)
   assert(nbytes > 0);
 
   void *p = malloc(nbytes);
-     
+  
   if (p == NULL) {
     perror("mem_alloc");
     fprintf(stderr, "At %s, line %d.\n", file, line);
@@ -26,9 +26,9 @@ void *mem_calloc(int64_t count, int64_t nbytes, char const *file, int32_t line)
 {
   assert(count > 0);
   assert(nbytes > 0);
-     
+  
   void *p = calloc(count, nbytes);
-     
+  
   if (p == NULL) {
     perror("mem_calloc");
     fprintf(stderr, "At %s, line %d.\n", file, line);
